@@ -1,7 +1,12 @@
 {
-    "project_name": "project",
+    "project_name": "my_project",
     "project_description": "Project description",
     "human_name": "New Python project",
-    "author": "John Snow <jsnow@example.com>",
-    "python_version": "^3.7"
+    "author": "Jane <jupshur@medrhythms.com>",
+    "python_version": "^3.8",
+    "circle_python_image": "circleci/python:3.8",
+    "dependency_manager": "poetry",
+    "install_dependencies_cmd": "pip install poetry && poetry install",
+    "activate_environment_cmd": "poetry shell",
+    "run_within_shell": "poetry run"
 }

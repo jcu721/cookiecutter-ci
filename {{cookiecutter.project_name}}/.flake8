@@ -1,5 +1,10 @@
 [flake8]
-ignore = E203, E266, E501, W503, F403, F401
-max-line-length = 79
-max-complexity = 18
-select = B,C,E,F,W,T4,B9
+# ignore:
+# E203: whitespace before ':' (ignored for compatibility with black)
+# E227: missing whitespace around bitwise or shift operator
+# E501: line too long (this is enforced by black)
+# W503: line break before binary operator
+# W504: line break after binary operator
+ignore = E203,E227,E501,W503,W504
+exclude = .git,__pycache__,migrations,__init__.py,venv
+max-complexity = 9

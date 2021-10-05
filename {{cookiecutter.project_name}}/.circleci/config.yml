@@ -1,0 +1,99 @@
+## CircleCI config for {{cookiecutter.human_name}}
+# Note: this does not include any caching or database steps
+
+references:
+  workspace_root: &workspace_root ~/{{cookiecutter.project_name}}
+
+  attach_workspace: &attach_workspace
+    attach_workspace:
+      at: ~/{{cookiecutter.project_name}}
+
+executors:
+  app_only:
+    docker:
+      - image: {{cookiecutter.circle_python_image}}
+    working_directory: *workspace_root
+
+version: 2.1
+jobs:
+  checkout_python:
+    executor: app_only
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            {{cookiecutter.install_dependencies_cmd}}
+
+  unit_test:
+    executor: app_only
+    steps:
+      - *attach_workspace
+      - run:
+          name: Run pytest
+          command: |
+            {{cookiecutter.activate_environment_cmd}}
+            pytest --junitxml=test-reports/pytest/junit.xml -s
+      - store_test_results:
+          path: test-reports
+
+  test_coverage:
+    executor: app_only
+    steps:
+      - *attach_workspace
+      - run:
+          name: Run pytest and fail if coverage is below threshold.
+          command: |
+            {{cookiecutter.activate_environment_cmd}}
+            pytest --cov-fail-under=70
+
+  pre_commit_hooks:
+  # verify that all code has been run through the pre-commit hooks
+  # since users have the option to skip checks on commit.
+    executor: app_only
+    steps:
+      - *attach_workspace
+      - run:
+          name: Run pre-commit hooks
+          command: |
+            {{cookiecutter.activate_environment_cmd}}
+            pre-commit run --all-files
+
+  security:
+    executor: app_only
+    steps:
+      - *attach_workspace
+      - run:
+          name: Run Bandit
+          command: |
+            {{cookiecutter.activate_environment_cmd}}
+            bandit -x tests,venv,vendor,migrations -r * | tee bandit.out
+      # TODO - replace pipenv check due to broken pyup integration.
+      # Relying on github security alerts for now.
+      # See: https://medrhythms.atlassian.net/browse/STRIDE-1159
+      # - run:
+      #     name: Run Pipenv check
+      #     command: pipenv check > pipenvcheck.out
+      - store_artifacts:
+          path: bandit.out
+          destination: bandit.out
+
+workflows:
+  version: 2.1
+
+  # Runs on all branch commits
+  test:
+    jobs:
+      - checkout_python
+      - unit_test:
+          requires:
+            - checkout_python
+      - test_coverage:
+          requires:
+            - checkout_python
+      - pre_commit_hooks:
+          requires:
+            - checkout_python
+      - security:
+          requires:
+            - checkout_python
